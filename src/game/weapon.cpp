@@ -303,6 +303,16 @@ namespace game
             if(hitsound && lasthit != lastmillis) playsound(S_HIT);
             lasthit = lastmillis;
         }
+        //angelo sauer ents
+        if(d->type==ENT_INANIMATE)
+        {
+            //hitmovable(damage, (movable *)d, at, vel, atk);
+	    //movable *m = (movable *)d;
+	    //m->hitpush(damage, vel, at, atk);
+	    hitmovable(damage, (movable *)d, at, vel, atk);
+            return;
+        }        
+        //angelo sauer ents
 
         gameent *f = (gameent *)d;
 

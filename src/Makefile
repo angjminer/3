@@ -1,4 +1,4 @@
-CXXFLAGS= -O3 -fomit-frame-pointer -ffast-math
+CXXFLAGS= -g -O3 -fomit-frame-pointer -ffast-math
 override CXXFLAGS+= -Wall -fsigned-char -fno-exceptions -fno-rtti
 
 PLATFORM= $(shell uname -s)
@@ -118,7 +118,8 @@ CLIENT_OBJS= \
 	game/scoreboard.o \
 	game/server.o \
 	game/waypoint.o \
-	game/weapon.o
+	game/weapon.o \
+	game/movable.o
 
 CLIENT_PCH= shared/cube.h.gch engine/engine.h.gch game/game.h.gch
 

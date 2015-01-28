@@ -56,15 +56,23 @@ namespace mpr
     struct EntOBB : Ent
     {
         matrix3 orient;
-
-        EntOBB(physent *ent) : Ent(ent)
+        float zmargin;//angelo sauer ents
+        //EntOBB(physent *ent) : Ent(ent)
+        EntOBB(physent *ent, float zmargin = 0) : Ent(ent), zmargin(zmargin)//angelo sauer ents        
         {
             orient.setyaw(ent->yaw*RAD);
         }
+        
+        //angelo sauer ents
+        vec center() const { return vec(ent->o.x, ent->o.y, ent->o.z + (ent->aboveeye - ent->eyeheight - zmargin)/2); }
+        //angelo sauer ents
 
         vec contactface(const vec &wn, const vec &wdir) const
         {
-            vec n = orient.transform(wn).div(vec(ent->xradius, ent->yradius, (ent->aboveeye + ent->eyeheight)/2)),
+            //vec n = orient.transform(wn).div(vec(ent->xradius, ent->yradius, (ent->aboveeye + ent->eyeheight)/2)),
+	  //angelo sauer ents
+            vec n = orient.transform(wn).div(vec(ent->xradius, ent->yradius, (ent->aboveeye + ent->eyeheight + zmargin)/2)),
+          //angelo sauer ents
                 dir = orient.transform(wdir),
                 an(fabs(n.x), fabs(n.y), dir.z ? fabs(n.z) : 0),
                 fn(0, 0, 0);
@@ -82,7 +90,10 @@ namespace mpr
         {
             return vec(ln.x > 0 ? ent->xradius : -ent->xradius,
                        ln.y > 0 ? ent->yradius : -ent->yradius,
-                       ln.z > 0 ? ent->aboveeye : -ent->eyeheight);
+                       //ln.z > 0 ? ent->aboveeye : -ent->eyeheight);
+		       //angelo sauer ents
+	               ln.z > 0 ? ent->aboveeye : -ent->eyeheight - zmargin);
+	               //angelo sauer ents
         }
 
         vec supportpoint(const vec &n) const
@@ -103,7 +114,10 @@ namespace mpr
         float right() const { return supportcoord(orient.a) + ent->o.x; }
         float back() const { return supportcoordneg(orient.b) + ent->o.y; }
         float front() const { return supportcoord(orient.b) + ent->o.y; }
-        float bottom() const { return ent->o.z - ent->eyeheight; }
+        //float bottom() const { return ent->o.z - ent->eyeheight; }
+        //angelo sauer ents
+        float bottom() const { return ent->o.z - ent->eyeheight - zmargin; }
+        //angelo sauer ents
         float top() const { return ent->o.z + ent->aboveeye; }
     };
 
@@ -121,11 +135,23 @@ namespace mpr
 
     struct EntCylinder : EntFuzzy
     {
-        EntCylinder(physent *ent) : EntFuzzy(ent) {}
+        //EntCylinder(physent *ent) : EntFuzzy(ent) {}
+      //angelo sauer ents
+        float zmargin;
+
+        EntCylinder(physent *ent, float zmargin = 0) : EntFuzzy(ent), zmargin(zmargin) {}
+
+        vec center() const { return vec(ent->o.x, ent->o.y, ent->o.z + (ent->aboveeye - ent->eyeheight - zmargin)/2); }
+
+        float bottom() const { return ent->o.z - ent->eyeheight - zmargin; }      
+      //angelo sauer ents
 
         vec contactface(const vec &n, const vec &dir) const
         {
-            float dxy = n.dot2(n)/(ent->radius*ent->radius), dz = n.z*n.z*4/(ent->aboveeye + ent->eyeheight);
+            //float dxy = n.dot2(n)/(ent->radius*ent->radius), dz = n.z*n.z*4/(ent->aboveeye + ent->eyeheight);
+	  //angelo sauer ents
+            float dxy = n.dot2(n)/(ent->radius*ent->radius), dz = n.z*n.z*4/(ent->aboveeye + ent->eyeheight + zmargin);	  
+	  //angelo sauer ents
             vec fn(0, 0, 0);
             if(dz > dxy && dir.z) fn.z = n.z*dir.z < 0 ? (n.z > 0 ? 1 : -1) : 0;
             else if(n.dot2(dir) < 0)
@@ -141,7 +167,10 @@ namespace mpr
         {
             vec p(ent->o);
             if(n.z > 0) p.z += ent->aboveeye;
-            else p.z -= ent->eyeheight;
+            //else p.z -= ent->eyeheight;
+	    //angelo sauer ents
+            else p.z -= ent->eyeheight + zmargin;	    
+	    //angelo sauer ents
             if(n.x || n.y)
             {
                 float r = ent->radius / n.magnitude2();

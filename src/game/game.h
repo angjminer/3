@@ -24,7 +24,7 @@ enum
 
 static const char * const animnames[] =
 {
-    "mapmodel",
+    "mapmodel", "trigger",
     "dead", "dying",
     "idle", "run N", "run NE", "run E", "run SE", "run S", "run SW", "run W", "run NW",
     "jump", "jump N", "jump NE", "jump E", "jump SE", "jump S", "jump SW", "jump W", "jump NW",
@@ -55,7 +55,7 @@ enum
 #define DMF 16.0f                // for world locations
 #define DNF 100.0f              // for normalized vectors
 #define DVELF 1.0f              // for playerspeed based velocity vectors
-
+/*
 enum                            // static entity types
 {
     NOTUSED = ET_EMPTY,         // entity slot not in use in map
@@ -76,10 +76,54 @@ enum                            // static entity types
     I_FIRST = 0,
     I_LAST = -1
 };
+*/
+//angelo sauer ents// must mach in order: const entnames[MAXENTTYPES] = in entities.cpp
+enum                            // static entity types
+{
+    NOTUSED = ET_EMPTY,         // entity slot not in use in map
+    LIGHT = ET_LIGHT,           // lightsource, attr1 = radius, attr2 = intensity
+    MAPMODEL = ET_MAPMODEL,     // attr1 = idx, attr2 = yaw, attr3 = pitch, attr4 = roll, attr5 = scale
+    PLAYERSTART,                // attr1 = angle, attr2 = team
+    ENVMAP = ET_ENVMAP,         // attr1 = radius
+    PARTICLES = ET_PARTICLES,
+    MAPSOUND = ET_SOUND,
+    SPOTLIGHT = ET_SPOTLIGHT,
+    DECAL = ET_DECAL,
+    TELEPORT,                   // attr1 = idx, attr2 = model, attr3 = tag
+    TELEDEST,                   // attr1 = angle, attr2 = idx
+    JUMPPAD,                    // attr1 = zpush, attr2 = ypush, attr3 = xpush
+    FLAG,                       // attr1 = angle, attr2 = team    
+    BOX,                        // attr1 = angle, attr2 = idx, attr3 = weight
+    BARREL,                     // attr1 = angle, attr2 = idx, attr3 = weight, attr4 = health
+    PLATFORM,                   // attr1 = angle, attr2 = idx, attr3 = tag, attr4 = speed
+    ELEVATOR,                   // attr1 = angle, attr2 = idx, attr3 = tag, attr4 = speed 
+
+   
+    MAXENTTYPES,
+
+    I_FIRST = 0,
+    I_LAST = -1
+};
+
+enum
+{
+    TRIGGER_RESET = 0,
+    TRIGGERING,
+    TRIGGERED,
+    TRIGGER_RESETTING,
+    TRIGGER_DISAPPEARED
+};
 
 struct gameentity : extentity
 {
+    int triggerstate, lasttrigger;
+    
+    gameentity() : triggerstate(TRIGGER_RESET), lasttrigger(0) {} 
 };
+//angelo sauer ents
+//struct gameentity : extentity
+//{
+//};
 
 enum { GUN_RAIL = 0, GUN_PULSE, NUMGUNS };
 enum { ACT_IDLE = 0, ACT_SHOOT, ACT_MELEE, NUMACTS };
@@ -453,6 +497,10 @@ namespace entities
 
     extern void preloadentities();
     extern void renderentities();
+//angelo sauer ents
+    extern void resettriggers();
+    extern void checktriggers();
+//angelo sauer ents    
     extern void checkitems(gameent *d);
     extern void resetspawns();
     extern void spawnitems(bool force = false);
@@ -553,6 +601,19 @@ namespace game
     extern void c2sinfo(bool force = false);
     extern void sendposition(gameent *d, bool reliable = false);
 
+//angelo sauer ents
+    // movable
+    struct movable;
+    extern vector<movable *> movables;
+
+    extern void clearmovables();
+    extern void stackmovable(movable *d, physent *o);
+    extern void updatemovables(int curtime);
+    extern void rendermovables();
+    extern void suicidemovable(movable *m);
+    extern void hitmovable(int damage, movable *m, gameent *at, const vec &vel, int gun);//concern may need to change to int atk
+//angelo sauer ents
+    
     // weapon
     extern int getweapon(const char *name);
     extern void shoot(gameent *d, const vec &targ);

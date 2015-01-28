@@ -55,7 +55,14 @@ void mdlcolor(float *r, float *g, float *b)
     loadingmodel->setcolor(vec(*r, *g, *b));
 }
 COMMAND(mdlcolor, "fff");
-
+//angelo parallax
+void mdlparascale(float *x, float *y, float *z)
+{
+    checkmdl;
+    loadingmodel->setparascale(vec(*x, *y, *z));
+}
+COMMAND(mdlparascale, "fff");
+//angelo parallax
 void mdlcollide(int *collide)
 {
     checkmdl;
@@ -1114,6 +1121,10 @@ void setbbfrommodel(dynent *d, const char *mdl)
     if(!m) return;
     vec center, radius;
     m->collisionbox(center, radius);
+    //angelo sauer ents
+    //if(d->type==ENT_INANIMATE && !m->ellipsecollide)
+      //  d->collidetype = COLLIDE_OBB;    
+    //angelo sauer ents
     if(m->collide != COLLIDE_ELLIPSE) d->collidetype = COLLIDE_OBB;
     d->xradius   = radius.x + fabs(center.x);
     d->yradius   = radius.y + fabs(center.y);

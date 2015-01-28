@@ -393,6 +393,9 @@ extern bool droptofloor(vec &o, float radius, float height);
 
 extern void vecfromyawpitch(float yaw, float pitch, int move, int strafe, vec &m);
 extern void vectoyawpitch(const vec &v, float &yaw, float &pitch);
+//angelo sauer ents
+extern bool moveplatform(physent *p, const vec &dir);
+//angelo sauer ents
 extern void updatephysstate(physent *d);
 extern void cleardynentcache();
 extern void updatedynentcache(physent *d);

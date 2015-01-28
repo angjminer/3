@@ -70,7 +70,7 @@ struct animmodel : model
 
     struct linkedpart;
     struct mesh;
-
+/*
     struct shaderparams
     {
         float spec, gloss, glow, glowdelta, glowpulse, fullbright, envmapmin, envmapmax, scrollu, scrollv, alphatest;
@@ -78,7 +78,17 @@ struct animmodel : model
 
         shaderparams() : spec(1.0f), gloss(1), glow(3.0f), glowdelta(0), glowpulse(0), fullbright(0), envmapmin(0), envmapmax(0), scrollu(0), scrollv(0), alphatest(0.9f), color(1, 1, 1) {}
     };
+*/
+//angelo parallax
+    struct shaderparams
+    {
+        float spec, gloss, glow, glowdelta, glowpulse, fullbright, envmapmin, envmapmax, scrollu, scrollv, alphatest;
+        vec color;
+	vec parascale;//angelo parallax
 
+        shaderparams() : spec(1.0f), gloss(1), glow(3.0f), glowdelta(0), glowpulse(0), fullbright(0), envmapmin(0), envmapmax(0), scrollu(0), scrollv(0), alphatest(0.9f), color(1, 1, 1),parascale(0.05, 10, 0) {}
+    };
+//angelo parallax
     struct shaderparamskey
     {
         static hashtable<shaderparams, shaderparamskey> keys;
@@ -111,7 +121,8 @@ struct animmodel : model
     struct skin : shaderparams
     {
         part *owner;
-        Texture *tex, *decal, *masks, *envmap, *normalmap;
+        //Texture *tex, *decal, *masks, *envmap, *normalmap;
+        Texture *tex, *decal, *masks, *envmap, *normalmap, *paramap;//angelo parallax
         Shader *shader, *rsmshader;
         bool cullface;
         shaderparamskey *key;
@@ -121,6 +132,7 @@ struct animmodel : model
         bool masked() const { return masks != notexture; }
         bool envmapped() const { return envmapmax>0; }
         bool bumpmapped() const { return normalmap != NULL; }
+        bool paramapped() const { return paramap != NULL; }//angelo parallax
         bool alphatested() const { return alphatest > 0 && tex->type&Texture::ALPHA; }
         bool decaled() const { return decal != NULL; }
 
@@ -154,6 +166,7 @@ struct animmodel : model
             }
             LOCALPARAMF(maskscale, spec, gloss, curglow);
             if(envmapped()) LOCALPARAMF(envmapscale, envmapmin-envmapmax, envmapmax);
+	    if(paramapped()) LOCALPARAMF(parallaxscale, parascale.x, parascale.y, parascale.z);//angelo parallax
         }
 
         Shader *loadshader()
@@ -189,6 +202,7 @@ struct animmodel : model
             if(alphatested()) opts[optslen++] = 'a';
             if(decaled()) opts[optslen++] = decal->type&Texture::ALPHA ? 'D' : 'd';
             if(bumpmapped()) opts[optslen++] = 'n';
+            if(paramapped()) opts[optslen++] = 'p';//angelo parallax 
             if(envmapped()) { opts[optslen++] = 'm'; opts[optslen++] = 'e'; }
             else if(masked()) opts[optslen++] = 'm';
             if(!cullface) opts[optslen++] = 'c';
@@ -1547,7 +1561,13 @@ struct animmodel : model
         if(parts.empty()) loaddefaultparts();
         loopv(parts) loopvj(parts[i]->skins) parts[i]->skins[j].color = color;
     }
-
+//angelo parallax
+    void setparascale(const vec &parascale)
+    {
+        if(parts.empty()) loaddefaultparts();
+        loopv(parts) loopvj(parts[i]->skins) parts[i]->skins[j].parascale = parascale;
+    }
+//angelo parallax 
     void calcbb(vec &center, vec &radius)
     {
         if(parts.empty()) return;
@@ -1750,7 +1770,12 @@ template<class MDL, class MESH> struct modelcommands
     {
         loopskins(meshname, s, s.color = vec(*r, *g, *b));
     }
-
+//angelo parallax
+    static void setparascale(char *meshname, float *x, float *y, float *z)
+    {
+        loopskins(meshname, s, s.parascale = vec(*x, *y, *z));
+    }
+//angelo parallax 
     static void setenvmap(char *meshname, char *envmap)
     {
         Texture *tex = cubemapload(envmap);
@@ -1762,7 +1787,11 @@ template<class MDL, class MESH> struct modelcommands
         Texture *normalmaptex = textureload(makerelpath(MDL::dir, normalmapfile), 0, true, false);
         loopskins(meshname, s, s.normalmap = normalmaptex);
     }
-
+    static void setparamap(char *meshname, char *paramapfile)//angelo parallax
+    {
+        Texture *paramaptex = textureload(makerelpath(MDL::dir, paramapfile), 0, true, false);
+        loopskins(meshname, s, s.paramap = paramaptex);
+    }//angelo parallax
     static void setdecal(char *meshname, char *decal)
     {
         loopskins(meshname, s,
@@ -1826,6 +1855,8 @@ template<class MDL, class MESH> struct modelcommands
             modelcommand(setcolor, "color", "sfff");
             modelcommand(setenvmap, "envmap", "ss");
             modelcommand(setbumpmap, "bumpmap", "ss");
+            modelcommand(setparamap, "paramap", "ss");	//angelo parallax 
+            modelcommand(setparascale, "parascale", "sfff");//angelo parallax		    
             modelcommand(setdecal, "decal", "ss");
             modelcommand(setfullbright, "fullbright", "sf");
             modelcommand(setshader, "shader", "ss");

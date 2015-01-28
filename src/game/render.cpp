@@ -354,6 +354,9 @@ namespace game
             renderplayer(exclude, 1, MDL_ONLYSHADOW);
         else if(!f && (player1->state==CS_ALIVE || (player1->state==CS_EDITING && third) || (player1->state==CS_DEAD && !hidedead)))
             renderplayer(player1, 1, third ? 0 : MDL_ONLYSHADOW);
+	//angelo sauer ents
+        rendermovables();	
+	//angelo sauer ents
         entities::renderentities();
         renderbouncers();
         renderprojectiles();

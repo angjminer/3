@@ -89,6 +89,11 @@ namespace game
 
     void resetgamestate()
     {
+      //angelo sauer ents
+	clearmovables();
+	//clearmonsters();                 // all monsters back at their spawns for editing
+	entities::resettriggers();      
+      //angelo sauer enrs
         clearprojectiles();
         clearbouncers();
     }
@@ -227,7 +232,10 @@ namespace game
         ai::update();
         moveragdolls();
         gets2c();
-        if(player1->state == CS_DEAD)
+	//angelo sauer ents
+        updatemovables(curtime);	
+        //angelo sauer ents
+	if(player1->state == CS_DEAD)
         {
             if(player1->ragdoll) moveragdoll(player1);
             else if(lastmillis-player1->lastpain<2000)
@@ -243,6 +251,9 @@ namespace game
             moveplayer(player1, 10, true);
             swayhudgun(curtime);
             entities::checkitems(player1);
+	    //angelo sauer ents
+	    entities::checktriggers();
+	    //angelo sauer ents
             if(cmode) cmode->checkitems(player1);
         }
         if(player1->clientnum>=0) c2sinfo();   // do this last, to reduce the effective frame lag
@@ -522,6 +533,9 @@ namespace game
 
     void startgame()
     {
+      //angelo sauer ents
+        clearmovables();      
+      //angelo sauer ents
         clearprojectiles();
         clearbouncers();
         clearragdolls();
@@ -587,11 +601,21 @@ namespace game
         if     (floorlevel>0) { if(d==player1 || d->type!=ENT_PLAYER || ((gameent *)d)->ai) msgsound(S_JUMP, d); }
         else if(floorlevel<0) { if(d==player1 || d->type!=ENT_PLAYER || ((gameent *)d)->ai) msgsound(S_LAND, d); }
     }
-
+/*
     void dynentcollide(physent *d, physent *o, const vec &dir)
     {
     }
-
+*/
+//angelo sauer ents
+    void dynentcollide(physent *d, physent *o, const vec &dir)
+    {
+        switch(d->type)
+        {
+            //case ENT_AI: if(dir.z > 0) stackmonster((monster *)d, o); break;
+            case ENT_INANIMATE: if(dir.z > 0) stackmovable((movable *)d, o); break;
+        }
+    }
+//angelo sauer ents
     void msgsound(int n, physent *d)
     {
         if(!d || d==player1)
@@ -607,11 +631,18 @@ namespace game
         }
     }
 
-    int numdynents() { return players.length(); }
+    //int numdynents() { return players.length(); }
+    //angelo sauer ents
+    int numdynents() { return players.length()+movables.length(); }    
+    //angelo sauer ents
 
     dynent *iterdynents(int i)
     {
         if(i<players.length()) return players[i];
+	//angelo sauer ents
+        i -= players.length();//dont forget this for mon mons	
+        if(i<movables.length()) return (dynent *)movables[i];	
+	//angelo sauer ents
         return NULL;
     }
 

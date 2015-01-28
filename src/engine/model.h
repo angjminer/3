@@ -5,6 +5,9 @@ struct model
     char *name;
     float spinyaw, spinpitch, spinroll, offsetyaw, offsetpitch, offsetroll;
     bool shadow, alphashadow, depthoffset;
+    //angelo sauer ents
+    //bool collide, ellipsecollide, shadow, alphadepth, depthoffset;    
+    //angelo sauer ents
     float scale;
     vec translate;
     BIH *bih;
@@ -37,7 +40,7 @@ struct model
     virtual void setfullbright(float fullbright) {}
     virtual void setcullface(bool cullface) {}
     virtual void setcolor(const vec &color) {}
-
+    virtual void setparascale(const vec &parascale) {}//angelo parallax 
     virtual void genshadowmesh(vector<triangle> &tris, const matrix4x3 &orient) {}
     virtual void preloadBIH() { if(!bih) setBIH(); }
     virtual void preloadshaders() {}

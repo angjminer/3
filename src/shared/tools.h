@@ -704,8 +704,9 @@ template <class T> struct vector
         uchar *newbuf = new uchar[alen*sizeof(T)];
         if(olen > 0)
         {
-            if(ulen > 0) memcpy(newbuf, (void *)buf, ulen*sizeof(T));
-            delete[] (uchar *)buf;
+            //if(ulen > 0) memcpy(newbuf, (void *)buf, ulen*sizeof(T));
+            memcpy(newbuf, (void *)buf, olen*sizeof(T));
+	    delete[] (uchar *)buf;
         }
         buf = (T *)newbuf;
     }

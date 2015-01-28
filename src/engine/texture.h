@@ -593,6 +593,7 @@ enum
 {
     TEX_DIFFUSE = 0,
     TEX_NORMAL,
+    TEX_PARA,//angelo parallax     
     TEX_GLOW,
     TEX_ENVMAP,
 

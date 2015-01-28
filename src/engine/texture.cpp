@@ -2150,6 +2150,7 @@ const struct slottex
     {"c", TEX_DIFFUSE},
     {"u", TEX_UNKNOWN},
     {"n", TEX_NORMAL},
+    {"p", TEX_PARA},//angelo parallax    
     {"g", TEX_GLOW},
     {"s", TEX_SPEC},
     {"z", TEX_DEPTH},

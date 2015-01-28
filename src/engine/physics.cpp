@@ -614,8 +614,10 @@ bool plcollide(physent *d, const vec &dir)    // collide with player
             physent *o = dynents[i];
             if(o==d || d->o.reject(o->o, d->radius+o->radius)) continue;
             switch(d->collidetype)
+	      /*
             {
                 case COLLIDE_ELLIPSE:
+		  
                     if(o->collidetype == COLLIDE_ELLIPSE)
                     {
                         if(!ellipsecollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight)) continue;
@@ -623,6 +625,7 @@ bool plcollide(physent *d, const vec &dir)    // collide with player
                     else if(!ellipseboxcollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight)) continue;
                     break;
                 case COLLIDE_OBB:
+		  
                     if(o->collidetype == COLLIDE_ELLIPSE)
                     {
                         if(!plcollide<mpr::EntOBB, mpr::EntCylinder>(d, dir, o)) continue;
@@ -631,6 +634,27 @@ bool plcollide(physent *d, const vec &dir)    // collide with player
                     break;
                 default: continue;
             }
+            */
+	      //angelo sauer ents
+            {
+                case COLLIDE_ELLIPSE:
+                //case COLLIDE_ELLIPSE_PRECISE:
+                    if(o->collidetype == COLLIDE_OBB)
+                    {
+                        if(!ellipseboxcollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight)) continue;
+                    }
+                    else if(!ellipsecollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight)) continue;
+                    break;
+                case COLLIDE_OBB:
+                    if(o->collidetype == COLLIDE_OBB)
+                    {
+                        if(!plcollide<mpr::EntOBB, mpr::EntOBB>(d, dir, o)) continue;
+                    }
+                    else if(!plcollide<mpr::EntOBB, mpr::EntCylinder>(d, dir, o)) continue;
+                    break;
+                default: continue;
+            }	      
+	      //angelo sauer ents
             collideplayer = o;
             game::dynentcollide(d, o, collidewall);
             return true;
@@ -858,7 +882,7 @@ static bool fuzzycollidesolid(physent *d, const vec &dir, float cutoff, const cu
     if(fabs(d->o.x - co.x - crad) > d->radius + crad || fabs(d->o.y - co.y - crad) > d->radius + crad ||
        d->o.z + d->aboveeye < co.z || d->o.z - d->eyeheight > co.z + size)
         return false;
-
+    E entvol(d);//angelo sauer ents
     collidewall = vec(0, 0, 0);
     float bestdist = -1e10f;
     int visible = isentirelysolid(c) ? c.visible : 0xFF;
@@ -884,7 +908,7 @@ static bool fuzzycollidesolid(physent *d, const vec &dir, float cutoff, const cu
 
     if(collidewall.iszero())
     {
-        collideinside = false;
+        collideinside = true;//concern true?
         return false;
     }
     return true;
@@ -1435,7 +1459,10 @@ bool move(physent *d, vec &dir)
     bool collided = false, slidecollide = false;
     vec obstacle;
     d->o.add(dir);
-    if(collide(d, dir))
+    //if(collide(d, dir))
+    //angelo sauer ents
+    if(collide(d, dir) || ((d->type==ENT_INANIMATE) && collide(d, vec(0, 0, 0), 0, false)))    
+    //angelo sauer ents
     {
         obstacle = collidewall;
         /* check to see if there is an obstacle that would prevent this one from being used as a floor (or ceiling bump) */
@@ -1976,7 +2003,166 @@ void updatephysstate(physent *d)
     if(d->physstate > PHYS_FALL && d->floor.z <= 0) d->floor = vec(0, 0, 1);
     d->o = old;
 }
+//angelo sauer ents//do a search for passengers
+const float PLATFORMMARGIN = 0.2f;
+const float PLATFORMBORDER = 10.0f;
 
+struct platforment
+{
+    physent *d;
+    int stacks, chains;
+
+    platforment() {}
+    platforment(physent *d) : d(d), stacks(-1), chains(-1) {}
+
+    bool operator==(const physent *o) const { return d == o; }
+};
+
+struct platformcollision
+{
+    platforment *ent;
+    int next;
+
+    platformcollision() {}
+    platformcollision(platforment *ent, int next) : ent(ent), next(next) {}
+};
+
+template<class E, class O>
+static inline bool platformcollide(physent *d, const vec &dir, physent *o, float margin)
+{
+    E entvol(d);
+    O obvol(o, margin);
+    vec cp;
+    if(mpr::collide(entvol, obvol, NULL, NULL, &cp))
+    {
+        vec wn = vec(cp).sub(obvol.center());
+        return !obvol.contactface(wn, dir.iszero() ? vec(wn).neg() : dir).iszero();
+    }
+    return false;
+}
+
+bool platformcollide(physent *d, physent *o, const vec &dir, float margin = 0)
+{
+    if(d->collidetype == COLLIDE_OBB)
+    {
+        if(o->collidetype == COLLIDE_OBB) return platformcollide<mpr::EntOBB, mpr::EntOBB>(d, dir, o, margin);
+        else return platformcollide<mpr::EntOBB, mpr::EntCylinder>(d, dir, o, margin);
+
+    }
+    else if(o->collidetype == COLLIDE_OBB) return ellipseboxcollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight + margin);
+    else return ellipsecollide(d, dir, o->o, vec(0, 0, 0), o->yaw, o->xradius, o->yradius, o->aboveeye, o->eyeheight + margin);
+}
+
+bool moveplatform(physent *p, const vec &dir)
+{
+    if(!insideworld(p->newpos)) return false;
+
+    vec oldpos(p->o);
+    (p->o = p->newpos).add(dir);
+    if(collide(p, dir, 0, dir.z<=0))
+    {
+        p->o = oldpos;
+        return false;
+    }
+    p->o = oldpos;
+
+    static vector<platforment> ents;
+    ents.setsize(0);
+    for(int x = int(max(p->o.x-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ex = int(min(p->o.x+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; x <= ex; x++)
+    for(int y = int(max(p->o.y-p->radius-PLATFORMBORDER, 0.0f))>>dynentsize, ey = int(min(p->o.y+p->radius+PLATFORMBORDER, worldsize-1.0f))>>dynentsize; y <= ey; y++)
+    {
+        const vector<physent *> &dynents = checkdynentcache(x, y);
+        loopv(dynents)
+        {
+            physent *d = dynents[i];
+            if(p==d || d->o.z-d->eyeheight < p->o.z+p->aboveeye || p->o.reject(d->o, p->radius+PLATFORMBORDER+d->radius) || ents.find(d) >= 0) continue;
+            ents.add(d);
+        }
+    }
+    static vector<platforment *> passengers, colliders;
+    passengers.setsize(0);
+    colliders.setsize(0);
+    static vector<platformcollision> collisions;
+    collisions.setsize(0);
+    // build up collision DAG of colliders to be pushed off, and DAG of stacked passengers
+    loopv(ents)
+    {
+        platforment &ent = ents[i];
+        physent *d = ent.d;
+        // check if the dynent is on top of the platform
+        if(platformcollide(p, d, vec(0, 0, 1), PLATFORMMARGIN)) passengers.add(&ent);
+        vec doldpos(d->o);
+        (d->o = d->newpos).add(dir);
+        if(collide(d, dir, 0, false)) colliders.add(&ent);
+        d->o = doldpos;
+        loopvj(ents)
+        {
+            platforment &o = ents[j];
+            if(platformcollide(d, o.d, dir))
+            {
+                collisions.add(platformcollision(&ent, o.chains));
+                o.chains = collisions.length() - 1;
+            }
+            if(d->o.z < o.d->o.z && platformcollide(d, o.d, vec(0, 0, 1), PLATFORMMARGIN))
+            {
+                collisions.add(platformcollision(&o, ent.stacks));
+                ent.stacks = collisions.length() - 1;
+            }
+        }
+    }
+    loopv(colliders) // propagate collisions
+    {
+        platforment *ent = colliders[i];
+        for(int n = ent->chains; n>=0; n = collisions[n].next)
+        {
+            platforment *o = collisions[n].ent;
+            if(colliders.find(o)<0) colliders.add(o);
+        }
+    }
+    if(dir.z>0)
+    {
+        loopv(passengers) // if any stacked passengers collide, stop the platform
+        {
+            platforment *ent = passengers[i];
+            if(colliders.find(ent)>=0) return false;
+            for(int n = ent->stacks; n>=0; n = collisions[n].next)
+            {
+                platforment *o = collisions[n].ent;
+                if(passengers.find(o)<0) passengers.add(o);
+            }
+        }
+        loopv(passengers)
+        {
+            physent *d = passengers[i]->d;
+            d->o.add(dir);
+            d->newpos.add(dir);
+            if(dir.x || dir.y) updatedynentcache(d);
+        }
+    }
+    else loopv(passengers) // move any stacked passengers who aren't colliding with non-passengers
+    {
+        platforment *ent = passengers[i];
+        if(colliders.find(ent)>=0) continue;
+
+        physent *d = ent->d;
+        d->o.add(dir);
+        d->newpos.add(dir);
+        if(dir.x || dir.y) updatedynentcache(d);
+
+        for(int n = ent->stacks; n>=0; n = collisions[n].next)
+        {
+            platforment *o = collisions[n].ent;
+            if(passengers.find(o)<0) passengers.add(o);
+        }
+    }
+
+    p->o.add(dir);
+    p->newpos.add(dir);
+    if(dir.x || dir.y) updatedynentcache(p);
+
+    return true;
+}
+//angelo sauer ents
 #define dir(name,v,d,s,os) ICOMMAND(name, "D", (int *down), { player->s = *down!=0; player->v = player->s ? d : (player->os ? -(d) : 0); });
 
 dir(backward, move,   -1, k_down,  k_up);
